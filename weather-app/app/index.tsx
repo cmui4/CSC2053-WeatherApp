@@ -1,12 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import ForecastDay from "@/components/ForecastDay";
+import HourlyForecastItem from "@/components/HourlyForecastItem";
 import SuggestionCard from "@/components/SuggestionCard";
 import { getSuggestions } from "@/constants/suggestions";
 import { DEFAULT_THEME, getWeatherTheme } from "@/constants/weatherCodes";
-import { useLocation } from "@/hooks/useLocation";
+import { LocationData, useLocation } from "@/hooks/useLocation";
+import { useLocationSearch } from "@/hooks/useLocationSearch";
 import { useWeather } from "@/hooks/useWeather";
 import { styles } from "./index.styles";
 
@@ -20,15 +22,28 @@ function StatPill({ label, value }: { label: string; value: string }) {
 }
 
 export default function WeatherScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchedLocation, setSearchedLocation] = useState<LocationData | null>(null);
+
   const { location, loading: locLoading, error: locError } = useLocation();
+  const { loading: searchLoading, error: searchError, search } = useLocationSearch();
+
+  const activeLocation = searchedLocation ?? location;
+
   const {
     weather,
     loading: wxLoading,
     error: wxError,
-  } = useWeather(location?.latitude ?? null, location?.longitude ?? null);
+  } = useWeather(activeLocation?.latitude ?? null, activeLocation?.longitude ?? null);
 
-  const isLoading = locLoading || wxLoading;
-  const error = locError || wxError;
+  async function handleSearch() {
+    const result = await search(searchQuery);
+    if (result) setSearchedLocation(result);
+  }
+
+  const isLoading = (!searchedLocation && locLoading) || wxLoading;
+  const gpsError = !searchedLocation ? locError : null;
+  const error = gpsError || wxError;
 
   const theme = weather ? getWeatherTheme(weather.current.weatherCode) : DEFAULT_THEME;
   const suggestions = weather
@@ -66,7 +81,7 @@ export default function WeatherScreen() {
     );
   }
 
-  if (!weather || !location) return null;
+  if (!weather || !activeLocation) return null;
 
   const { current, daily } = weather;
 
@@ -80,26 +95,58 @@ export default function WeatherScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search city…"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch} disabled={searchLoading}>
+            {searchLoading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.searchButtonText}>Search</Text>
+            }
+          </TouchableOpacity>
+        </View>
+        {searchError ? <Text style={styles.searchError}>{searchError}</Text> : null}
+
         <View style={styles.locationRow}>
           <Text style={styles.locationPin}>📍</Text>
           <View>
-            <Text style={styles.city}>{location.city}</Text>
-            {location.region ? <Text style={styles.region}>{location.region}</Text> : null}
+            <Text style={styles.city}>{activeLocation.city}</Text>
+            {activeLocation.region ? <Text style={styles.region}>{activeLocation.region}</Text> : null}
           </View>
         </View>
 
         <View style={styles.mainWeather}>
           <Text style={styles.weatherEmoji}>{theme.emoji}</Text>
-          <Text style={styles.temperature}>{current.temperature}°C</Text>
+          <Text style={styles.temperature}>{current.temperature}°F</Text>
           <Text style={styles.condition}>{theme.label}</Text>
-          <Text style={styles.feelsLike}>Feels like {current.apparentTemperature}°C</Text>
+          <Text style={styles.feelsLike}>Feels like {current.apparentTemperature}°F</Text>
         </View>
 
         <View style={styles.pillRow}>
           <StatPill label="Humidity" value={`${current.humidity}%`} />
-          <StatPill label="Wind" value={`${current.windSpeed} km/h`} />
+          <StatPill label="Wind" value={`${current.windSpeed} mph`} />
           <StatPill label="UV Index" value={String(current.uvIndex)} />
           <StatPill label="Rain" value={`${current.precipitationProbability}%`} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Hourly Forecast</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.forecastRow}
+          >
+            {weather.hourly.map((hour, i) => (
+              <HourlyForecastItem key={hour.time} forecast={hour} isNow={i === 0} />
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.section}>

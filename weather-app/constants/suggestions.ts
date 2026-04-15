@@ -95,7 +95,7 @@ export function getSuggestions(w: WeatherInput): Suggestion[] {
       id: "wind-strong",
       emoji: "💨",
       title: "Very Windy",
-      message: `Gusts around ${Math.round(w.windSpeed)} km/h. Avoid cycling or walking in exposed areas.`,
+      message: `Gusts around ${Math.round(w.windSpeed)} mph. Avoid cycling or walking in exposed areas.`,
       accentColor: "#5C6BC0",
     });
   } else if (w.windSpeed >= 30) {
@@ -103,7 +103,7 @@ export function getSuggestions(w: WeatherInput): Suggestion[] {
       id: "wind",
       emoji: "💨",
       title: "It's Quite Windy",
-      message: `Wind speeds of ${Math.round(w.windSpeed)} km/h. Hold onto your hat!`,
+      message: `Wind speeds of ${Math.round(w.windSpeed)} mph. Hold onto your hat!`,
       accentColor: "#7986CB",
     });
   }
@@ -121,7 +121,7 @@ export function getSuggestions(w: WeatherInput): Suggestion[] {
       id: "cold",
       emoji: "🧤",
       title: "Dress Warm",
-      message: `Feels like ${Math.round(w.apparentTemperature)}°C outside. Gloves and a heavy coat are a must.`,
+      message: `Feels like ${Math.round(w.apparentTemperature)}°F outside. Gloves and a heavy coat are a must.`,
       accentColor: "#1565C0",
     });
   }

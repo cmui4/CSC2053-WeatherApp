@@ -62,4 +62,36 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
   },
+  searchRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    color: "#fff",
+    fontSize: 15,
+  },
+  searchButton: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  searchButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  searchError: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 14,
+    marginBottom: 12,
+  },
 });

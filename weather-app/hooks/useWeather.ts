@@ -20,9 +20,16 @@ export interface DailyForecast {
   precipitationProbability: number;
 }
 
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  precipitationProbability: number;
+}
+
 export interface WeatherData {
   current: CurrentWeather;
   daily: DailyForecast[];
+  hourly: HourlyForecast[];
 }
 
 export interface WeatherState {
@@ -58,12 +65,15 @@ export function useWeather(latitude: number | null, longitude: number | null): W
         "cloud_cover",
         "is_day",
       ].join(","),
+      hourly: ["temperature_2m", "precipitation_probability"].join(","),
       daily: [
         "weather_code",
         "temperature_2m_max",
         "temperature_2m_min",
         "precipitation_probability_max",
       ].join(","),
+      temperature_unit: "fahrenheit",
+      wind_speed_unit: "mph",
       timezone: "auto",
       forecast_days: "7",
     });
@@ -75,6 +85,7 @@ export function useWeather(latitude: number | null, longitude: number | null): W
 
         const c = data.current;
         const d = data.daily;
+        const h = data.hourly;
 
         const daily: DailyForecast[] = (d.time as string[]).map((date, i) => ({
           date,
@@ -83,6 +94,21 @@ export function useWeather(latitude: number | null, longitude: number | null): W
           minTemp: Math.round(d.temperature_2m_min[i]),
           precipitationProbability: d.precipitation_probability_max[i] ?? 0,
         }));
+
+        // Slice hourly data to the next 12 hours from the current local hour
+        // at the requested location (use utc_offset_seconds to avoid device-timezone mismatch).
+        const utcOffset: number = data.utc_offset_seconds ?? 0;
+        const locationNow = new Date(Date.now() + utcOffset * 1000);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const currentHourStr = `${locationNow.getUTCFullYear()}-${pad(locationNow.getUTCMonth() + 1)}-${pad(locationNow.getUTCDate())}T${pad(locationNow.getUTCHours())}:00`;
+        const startIdx = Math.max(0, (h.time as string[]).findIndex((t: string) => t >= currentHourStr));
+        const hourly: HourlyForecast[] = (h.time as string[])
+          .slice(startIdx, startIdx + 12)
+          .map((time: string, i: number) => ({
+            time,
+            temperature: Math.round(h.temperature_2m[startIdx + i]),
+            precipitationProbability: h.precipitation_probability[startIdx + i] ?? 0,
+          }));
 
         setState({
           weather: {
@@ -98,6 +124,7 @@ export function useWeather(latitude: number | null, longitude: number | null): W
               isDay: c.is_day,
             },
             daily,
+            hourly,
           },
           loading: false,
           error: null,
