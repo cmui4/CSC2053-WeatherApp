@@ -16,16 +16,21 @@ function formatHour(timeStr: string): string {
 }
 
 export default function HourlyForecastItem({ forecast, isNow }: Props) {
+  const emoji = isNow ? "☀️" : "⛅";
+
   return (
     <View style={[styles.container, isNow && styles.nowContainer]}>
       <Text style={[styles.hour, isNow && styles.nowText]}>
         {isNow ? "Now" : formatHour(forecast.time)}
       </Text>
-      <Text style={[styles.temp, isNow && styles.nowText]}>
+      <Text style={styles.emoji}>{emoji}</Text>
+      <Text style={[styles.temp, isNow && styles.nowTempText]}>
         {forecast.temperature}°
       </Text>
       {forecast.precipitationProbability > 0 && (
-        <Text style={styles.rain}>💧 {forecast.precipitationProbability}%</Text>
+        <Text style={[styles.rain, isNow && styles.nowRainText]}>
+          💧 {forecast.precipitationProbability}%
+        </Text>
       )}
     </View>
   );
