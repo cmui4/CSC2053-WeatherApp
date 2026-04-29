@@ -1,5 +1,12 @@
 import { isClear, isFoggy, isRainy, isSnowy, isStormy } from "./weatherCodes";
 
+/**
+ * Thresholds assume Fahrenheit — match useWeather (`temperature_unit: "fahrenheit"`).
+ * ~90°F ≈ 32°C (“very hot / stay hydrated”). ~23°F ≈ −5°C (“heavy winter gear”).
+ */
+const HOT_DAY_MIN_F = 90;
+const VERY_COLD_FEELS_LIKE_MAX_F = 23;
+
 export interface Suggestion {
   id: string;
   emoji: string;
@@ -108,7 +115,7 @@ export function getSuggestions(w: WeatherInput): Suggestion[] {
     });
   }
 
-  if (w.temperature >= 32) {
+  if (w.temperature >= HOT_DAY_MIN_F) {
     tips.push({
       id: "heat",
       emoji: "🥤",
@@ -116,7 +123,7 @@ export function getSuggestions(w: WeatherInput): Suggestion[] {
       message: "It's very hot today. Drink water often and avoid peak sun hours.",
       accentColor: "#E53935",
     });
-  } else if (w.apparentTemperature <= -5) {
+  } else if (w.apparentTemperature <= VERY_COLD_FEELS_LIKE_MAX_F) {
     tips.push({
       id: "cold",
       emoji: "🧤",

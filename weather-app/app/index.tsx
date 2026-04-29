@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, Share, Text, TextInput, TouchableOpacity, View } from "react-native";
 import ForecastDay from "@/components/ForecastDay";
 import HourlyForecastItem from "@/components/HourlyForecastItem";
 import SuggestionCard from "@/components/SuggestionCard";
@@ -10,6 +10,7 @@ import { DEFAULT_THEME, getWeatherTheme } from "@/constants/weatherCodes";
 import { LocationData, useLocation } from "@/hooks/useLocation";
 import { useLocationSearch } from "@/hooks/useLocationSearch";
 import { useWeather } from "@/hooks/useWeather";
+import { buildShareMessage } from "@/lib/buildShareMessage";
 import { styles } from "./index.styles";
 
 function StatPill({ label, value }: { label: string; value: string }) {
@@ -57,6 +58,23 @@ export default function WeatherScreen() {
         apparentTemperature: weather.current.apparentTemperature,
       })
     : [];
+
+  async function handleShare() {
+    if (!weather || !activeLocation || suggestions.length === 0) return;
+    const message = buildShareMessage({
+      location: activeLocation,
+      conditionLabel: theme.label,
+      conditionEmoji: theme.emoji,
+      temperature: weather.current.temperature,
+      apparentTemperature: weather.current.apparentTemperature,
+      suggestion: suggestions[0],
+    });
+    try {
+      await Share.share({ message });
+    } catch {
+      /* user dismissed share sheet */
+    }
+  }
 
   if (isLoading) {
     return (
@@ -114,12 +132,24 @@ export default function WeatherScreen() {
         </View>
         {searchError ? <Text style={styles.searchError}>{searchError}</Text> : null}
 
-        <View style={styles.locationRow}>
-          <Text style={styles.locationPin}>📍</Text>
-          <View>
-            <Text style={styles.city}>{activeLocation.city}</Text>
-            {activeLocation.region ? <Text style={styles.region}>{activeLocation.region}</Text> : null}
+        <View style={styles.locationHeaderRow}>
+          <View style={styles.locationRow}>
+            <Text style={styles.locationPin}>📍</Text>
+            <View>
+              <Text style={styles.city}>{activeLocation.city}</Text>
+              {activeLocation.region ? <Text style={styles.region}>{activeLocation.region}</Text> : null}
+            </View>
           </View>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => {
+              void handleShare();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Share weather summary"
+          >
+            <Text style={styles.shareButtonText}>Share</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.mainWeather}>
@@ -150,7 +180,7 @@ export default function WeatherScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Tips</Text>
+          <Text style={styles.sectionTitle}>{"Today's Tips"}</Text>
           {suggestions.map((s) => (
             <SuggestionCard key={s.id} suggestion={s} />
           ))}
